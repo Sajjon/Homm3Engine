@@ -1,7 +1,7 @@
 import XCTest
 
-import HoMM3EngineTests
+import HeroesOfMightAndMagic3Tests
 
 var tests = [XCTestCaseEntry]()
-tests += HoMM3EngineTests.allTests()
+tests += HeroesOfMightAndMagic3Tests.allTests()
 XCTMain(tests)
