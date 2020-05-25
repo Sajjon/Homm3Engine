@@ -24,6 +24,7 @@ final class CreatureTypeTests: XCTestCase {
     
     func testNameOfBlackDragon() {
         XCTAssertEqual(BlackDragon.displayName, "Black Dragon")
+        XCTAssertEqual(BlackDragon.uniqueName, "blackDragon")
     }
     
     func testIsUpgradeOf() throws {

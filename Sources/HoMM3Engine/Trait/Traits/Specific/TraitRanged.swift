@@ -21,5 +21,6 @@ public struct TraitRanged: SpecificTrait {
             detailedDescription: "Allows this creature to attack without engaging into hand-to-hand combat. Visually typical ranged creature is armed with bows, e.g. Archers and Elves, but there are also several creatures, that use some kind of magic or elements (lightning, etc.), like Monks or Titans."
         )
         self.specific = .init(ammo: ammo)
+        
     }
 }

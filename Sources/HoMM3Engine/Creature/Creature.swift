@@ -131,7 +131,11 @@ public extension Creature {
         CreatureTraitsLedger.traits(of: self)
     }
     
-    func hasTrait<T>(_ trait: T) -> Bool where T: Trait {
+    func has<T>(trait: T) -> Bool where T: Trait {
+        hasTrait(trait.eraseToAnyTrait())
+    }
+    
+    func hasTrait(_ trait: AnyTrait) -> Bool {
         CreatureTraitsLedger.does(creature: self, haveTrait: trait)
     }
     
@@ -150,6 +154,6 @@ public extension Creature {
 public extension Creature {
     
     var canFly: Bool {
-        hasTrait(Traits.flying)
+        hasTrait(.flying)
     }
 }

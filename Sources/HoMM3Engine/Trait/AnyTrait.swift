@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct AnyTrait: Trait, Hashable, CustomStringConvertible {
+public struct AnyTrait: Trait, TraitInitializable, Hashable, CustomStringConvertible {
         
     public let uniqueName: CamelCasedStringAaZz
     public let displayName: String

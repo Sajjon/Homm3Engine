@@ -11,10 +11,17 @@ import XCTest
 final class TraitTests: XCTestCase {
     
     func testAddingTraits() {
-        let noEneRet = AnyTrait.noEnemyRetaliation
-        XCTAssertTrue(RedDragon.hasTrait(Traits.breathAttack))
-        XCTAssertFalse(RedDragon.hasTrait(noEneRet))
-        RedDragon.addTrait(noEneRet)
-        XCTAssertTrue(RedDragon.hasTrait(Traits.noEnemyRetaliation))
+        XCTAssertTrue(RedDragon.hasTrait(.breathAttack))
+        XCTAssertFalse(RedDragon.hasTrait(.noEnemyRetaliation))
+        RedDragon.addTrait(.noEnemyRetaliation)
+        XCTAssertTrue(RedDragon.hasTrait(.noEnemyRetaliation))
+    }
+    
+    func testNegationOfTraits() {
+        XCTAssertTrue(Battlefield.Trait.obstacle.isNegated︖(by: AnyTrait.flying))
+        XCTAssertFalse(AnyTrait.flying.isNegated︖(by: Battlefield.Trait.obstacle))
+            
+        XCTAssertFalse(Battlefield.Trait.obstacle.isNegating︖(AnyTrait.flying))
+        XCTAssertTrue(AnyTrait.flying.isNegating︖(Battlefield.Trait.obstacle))
     }
 }
