@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol Trait {
+public protocol Trait: Modifier {
     
     /// A name which uniquely identifies this trait
     var uniqueName: CamelCasedStringAaZz { get }
