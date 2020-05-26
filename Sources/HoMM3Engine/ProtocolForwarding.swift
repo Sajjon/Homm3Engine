@@ -168,7 +168,7 @@ extension AdditiveArithmeticTag where RawValue: AdditiveArithmetic {
 }
 
 extension NewType: AdditiveArithmetic where Tag: AdditiveArithmeticTag {
-    public static var zero: NewType<Tag> { .init(rawValue: Tag.zero) }
+    public static var zero: Self { .init(rawValue: Tag.zero) }
 
     public static func + (lhs: Self, rhs: Self) -> Self {
         return .init(rawValue: Tag.addition(lhs.rawValue, rhs.rawValue))
@@ -205,11 +205,11 @@ extension NewType: Numeric where Tag: NumericTag {
 
     public var magnitude: Tag.Magnitude { Tag.magnitude(of: rawValue) }
 
-    public static func * (lhs: NewType<Tag>, rhs: NewType<Tag>) -> NewType<Tag> {
+    public static func * (lhs: Self, rhs: Self) -> Self {
         return .init(rawValue: Tag.multiplication(lhs.rawValue, rhs.rawValue))
     }
 
-    public static func *= (lhs: inout NewType<Tag>, rhs: NewType<Tag>) {
+    public static func *= (lhs: inout Self, rhs: Self) {
         Tag.inPlaceMultiplication(&lhs.rawValue, rhs.rawValue)
     }
 }
@@ -262,11 +262,11 @@ extension StrideableTag where RawValue: Strideable, RawValue.Stride == Stride {
 extension NewType: Strideable where Tag: StrideableTag {
     public typealias Stride = Tag.Stride
 
-    public func advanced(by n: Tag.Stride) -> NewType<Tag> {
+    public func advanced(by n: Tag.Stride) -> Self {
         return .init(rawValue: Tag.advance(rawValue, by: n))
     }
 
-    public func distance(to other: NewType<Tag>) -> Tag.Stride {
+    public func distance(to other: Self) -> Tag.Stride {
         return Tag.distance(from: rawValue, to: other.rawValue)
     }
 }
@@ -326,7 +326,7 @@ extension NewType: BinaryInteger where Tag: BinaryIntegerTag, Self.Magnitude: Bi
     public typealias Words = Tag.Words
     
     public init() {
-           self.init(rawValue: Tag.newEmpty())
+        self.init(rawValue: Tag.newEmpty())
     }
 
     public init?<T>(exactly source: T) where T: BinaryFloatingPoint {
@@ -429,7 +429,8 @@ extension BinaryIntegerTag where RawValue: BinaryInteger, RawValue.Words == Word
         lhs |= rhs
     }
     
-    public static func exactlyFloat<T>(_ source: T) -> RawValue? where T: BinaryFloatingPoint { RawValue(exactly: source)
+    public static func exactlyFloat<T>(_ source: T) -> RawValue? where T: BinaryFloatingPoint {
+        RawValue(exactly: source)
     }
     
     
@@ -471,5 +472,163 @@ extension BinaryIntegerTag where RawValue: BinaryInteger, RawValue.Words == Word
     
     static func inverse(using rawValue: RawValue) -> RawValue {
         ~rawValue
+    }
+}
+
+// MARK: LosslessStringConvertibleTag
+public protocol LosslessStringConvertibleTag: CustomStringConvertibleTag {
+    static func fromDescription(_ description: String) -> RawValue?
+}
+
+extension LosslessStringConvertibleTag where RawValue: LosslessStringConvertible {
+    public static func fromDescription(_ description: String) -> RawValue? {
+        RawValue(description)
+    }
+}
+
+extension NewType: LosslessStringConvertible where Tag: LosslessStringConvertibleTag {
+    public init?(_ description: String) {
+        guard let rawValue = Tag.fromDescription(description) else { return nil }
+        self.init(rawValue: rawValue)
+    }
+}
+
+
+// MARK: FixedWidthIntegerTag
+public protocol FixedWidthIntegerTag: BinaryIntegerTag, LosslessStringConvertibleTag {
+    
+    static func fromText<S: StringProtocol>(_ text: S, radix: Int) -> RawValue?
+    static func truncatingBits(_ bits: UInt) -> RawValue
+    static func bitWidthFromRawValue() -> Int
+    static func maxRawValue() -> RawValue
+    static func minRawValue() -> RawValue
+    static func addingReportingOverflowFromRawValue(addTo base: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool)
+    static func subtactingReportingOverflowFromRawValue(_ lhs: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool)
+    static func multipliedReportingOverflowFromRawValue(_ lhs: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool)
+    static func dividingReportingOverflowFromRawValue(_ lhs: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool)
+    static func remainderReportingOverflowFromRawValue(_ lhs: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool)
+    static func dividingFullWidthFromRawValue(_ base: RawValue, _ dividend: (high: RawValue, low: Magnitude)) -> (quotient: RawValue, remainder: RawValue)
+    
+   static func nonzeroBitCountUsingRawValue(_ rawValue: RawValue) -> Int
+   static func leadingZeroBitCountUsingRawValue(_ rawValue: RawValue) -> Int
+   static func byteSwappedUsingRawValue(_ rawValue: RawValue) -> RawValue
+}
+
+extension FixedWidthIntegerTag where RawValue: FixedWidthInteger { //, RawValue.Words == Words {
+    public static func fromText<S: StringProtocol>(_ text: S, radix: Int) -> RawValue? {
+        RawValue(text, radix: radix)
+    }
+    
+    public static func truncatingBits(_ bits: UInt) -> RawValue {
+        RawValue(bits)
+    }
+    public static func bitWidthFromRawValue() -> Int {
+        RawValue.bitWidth
+    }
+    public static func maxRawValue() -> RawValue {
+        RawValue.max
+    }
+    public static func minRawValue() -> RawValue {
+        RawValue.min
+    }
+    
+    public static func addingReportingOverflowFromRawValue(addTo base: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool) {
+        base.addingReportingOverflow(rhs)
+    }
+    
+    
+    public static func subtactingReportingOverflowFromRawValue(_ lhs: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool) {
+        lhs.subtractingReportingOverflow(rhs)
+    }
+    
+    public static func multipliedReportingOverflowFromRawValue(_ lhs: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool) {
+        lhs.multipliedReportingOverflow(by: rhs)
+    }
+    
+    public static func dividingReportingOverflowFromRawValue(_ lhs: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool) {
+        lhs.remainderReportingOverflow(dividingBy: rhs)
+    }
+    
+    public static func remainderReportingOverflowFromRawValue(_ lhs: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool) {
+        lhs.remainderReportingOverflow(dividingBy: rhs)
+    }
+    
+    public static func dividingFullWidthFromRawValue(_ base: RawValue, _ dividend: (high: RawValue, low: RawValue.Magnitude)) -> (quotient: RawValue, remainder: RawValue) {
+        base.dividingFullWidth(dividend)
+    }
+    
+    public static func nonzeroBitCountUsingRawValue(_ rawValue: RawValue) -> Int {
+        rawValue.nonzeroBitCount
+    }
+    public static func leadingZeroBitCountUsingRawValue(_ rawValue: RawValue) -> Int {
+        rawValue.leadingZeroBitCount
+    }
+    public static func byteSwappedUsingRawValue(_ rawValue: RawValue) -> RawValue {
+        rawValue.byteSwapped
+    }
+}
+
+extension NewType: FixedWidthInteger where Tag: FixedWidthIntegerTag, Self.Magnitude : FixedWidthInteger, Self.Stride : FixedWidthInteger, Self.Stride : SignedInteger, Self.Magnitude == Self.Magnitude.Magnitude {
+    public static var bitWidth: Int {
+        Tag.bitWidthFromRawValue()
+    }
+    
+    public static var max: Self {
+        self.init(rawValue: Tag.maxRawValue())
+    }
+    
+    public static var min: Self {
+        self.init(rawValue: Tag.minRawValue())
+    }
+    
+    public func addingReportingOverflow(_ rhs: Self) -> (partialValue: Self, overflow: Bool) {
+        let (partialRawValue, didOverflow) = Tag.addingReportingOverflowFromRawValue(addTo: rawValue, rhs.rawValue)
+        return (Self.init(rawValue: partialRawValue), didOverflow)
+    }
+    
+    public func subtractingReportingOverflow(_ rhs: Self) -> (partialValue: Self, overflow: Bool) {
+        let (partialRawValue, didOverflow) = Tag.subtactingReportingOverflowFromRawValue(rawValue, rhs.rawValue)
+        return (Self.init(rawValue: partialRawValue), didOverflow)
+    }
+    
+    public func multipliedReportingOverflow(by rhs: Self) -> (partialValue: Self, overflow: Bool) {
+        let (partialRawValue, didOverflow) = Tag.multipliedReportingOverflowFromRawValue(rawValue, rhs.rawValue)
+        return (Self.init(rawValue: partialRawValue), didOverflow)
+    }
+    
+    public func dividedReportingOverflow(by rhs: Self) -> (partialValue: Self, overflow: Bool) {
+        let (partialRawValue, didOverflow) = Tag.dividingReportingOverflowFromRawValue(rawValue, rhs.rawValue)
+        return (Self.init(rawValue: partialRawValue), didOverflow)
+    }
+    
+    public func remainderReportingOverflow(dividingBy rhs: Self) -> (partialValue: Self, overflow: Bool) {
+        let (partialRawValue, didOverflow) = Tag.remainderReportingOverflowFromRawValue(rawValue, rhs.rawValue)
+        return (Self.init(rawValue: partialRawValue), didOverflow)
+    }
+    
+    public func dividingFullWidth(_ dividend: (high: Self, low: Tag.Magnitude)) -> (quotient: Self, remainder: Self) {
+        let (quotient, remainder) = Tag.dividingFullWidthFromRawValue(rawValue, (dividend.high.rawValue, dividend.low))
+        return (Self.init(rawValue: quotient), Self.init(rawValue: remainder))
+    }
+    
+    public var nonzeroBitCount: Int {
+        Tag.nonzeroBitCountUsingRawValue(rawValue)
+    }
+    
+    public var leadingZeroBitCount: Int {
+        Tag.leadingZeroBitCountUsingRawValue(rawValue)
+    }
+    
+    public var byteSwapped: Self {
+        Self.init(rawValue: Tag.byteSwappedUsingRawValue(rawValue))
+    }
+    
+    public init?<S>(_ text: S, radix: Int = 10) where S : StringProtocol {
+        guard let rawValue = Tag.fromText(text, radix: radix) else { return nil }
+        self.init(rawValue: rawValue)
+    }
+    
+    public init(_truncatingBits bits: UInt) {
+        self.init(rawValue: Tag.truncatingBits(bits))
     }
 }
