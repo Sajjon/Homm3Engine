@@ -54,40 +54,41 @@ private extension CreatureStack {
     }
     
     /// Attack modifier, primarily the Hero's attack strength + spells
-    var attackModifier: Creature.Stats.Attack {
-//        var attackModifier = controllingHero.primarySkills.attack
-//        if hasSpell(.bloodlust) {
-//            attackModifier += 3 // or 6 if Hero has advanced / expert Fire Magic
-//            // This is NOT a sustainable solution
-//        }
-//        if isAffected(by: AnyTrait.disease) {
-//            attackModifier -= 2
-//        }
-//
-//        // take into consideration: "native terrain or hero's creature specialties."
-//        return attackModifier
-        fatalError()
+    var attackModifier: Attack {
+        var attackModifier = controllingHero.primarySkills.attack
+        if hasSpell(.bloodlust) {
+            attackModifier += 3 // or 6 if Hero has advanced / expert Fire Magic
+            // This is NOT a sustainable solution
+        }
+        if isAffected(by: AnyTrait.disease) {
+            assert(attackModifier >= 2)
+            attackModifier -= 2
+        }
+
+        // take into consideration: "native terrain or hero's creature specialties."
+        return attackModifier
     }
     
     /// Creatures attack + modifier, primarily the Hero's attack strength
-    var totalAttack: Creature.Stats.Attack {
+    var totalAttack: Attack {
         creatureType.stats.attack + attackModifier
     }
     
     /// Defense modifier, primarily the Hero's defense strength + spells
-    var defenseModifier: Creature.Stats.Defense {
+    var defenseModifier: Defense {
         var defenseModifier = controllingHero.primarySkills.defense
         if isAffected(by: AnyTrait.disease) {
             // This is NOT a sustainable solution
+             assert(defenseModifier >= 2)
             defenseModifier -= 2
         }
-        
+
         // take into consideration: "native terrain or hero's creature specialties."
         return defenseModifier
     }
     
     /// Creatures attack + modifier, primarily the Hero's attack strength
-    var totalDefense: Creature.Stats.Defense {
+    var totalDefense: Defense {
         creatureType.stats.defense + defenseModifier
     }
     
@@ -122,15 +123,13 @@ private extension CreatureStack {
         }()
         
         let I1: Double = {
-//            guard attack > defense else { return 0 }
-//            return 0.05 * (Double(attack - defense))
-            fatalError()
+            guard attack > defense else { return 0 }
+            return 0.05 * (Double(attack - defense))
         }()
         
         let R1: Double = {
-//            guard defense > attack else { return 0 }
-//            return 0.025 * (Double(defense - attack))
-            fatalError()
+            guard defense > attack else { return 0 }
+            return 0.025 * (Double(defense - attack))
         }()
         
         let I2: Double = {

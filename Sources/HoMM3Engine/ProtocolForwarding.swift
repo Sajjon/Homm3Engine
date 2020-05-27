@@ -647,13 +647,43 @@ where
 {}
 
 
-// MARK: UnsignedInt Tags
+// MARK: SignedIntegerTag
+public protocol SignedIntegerTag: BinaryIntegerTag, SignedNumericTag {}
+
+extension NewType: SignedInteger
+where
+    Tag: SignedIntegerTag,
+    Self.Magnitude: BinaryInteger,
+    Self.Magnitude == Self.Magnitude.Magnitude
+{}
+
+
+
+
+
+// MARK: UnsignedInt Tags + UIntTagBase
 protocol UnsignedTags: CommonTags, UnsignedIntegerTag { }
-extension TagBase where RawValue == UInt {
+
+protocol UnsignedFixedWidthIntTags: UnsignedTags, FixedWidthIntegerTag { }
+
+open class UIntTagBase: TagBase<UInt>, UnsignedFixedWidthIntTags {
     public typealias Magnitude = RawValue.Magnitude
     public typealias IntegerLiteralType = RawValue.IntegerLiteralType
     public typealias Stride = RawValue.Stride
     public typealias Words = RawValue.Words
 }
 
-protocol UnsignedFixedWidthIntTags: UnsignedTags, FixedWidthIntegerTag { }
+
+
+// MARK: UnsignedInt Tags + UIntTagBase
+protocol SignedIntTags: CommonTags, SignedIntegerTag, FixedWidthIntegerTag { }
+
+open class IntTagBase: TagBase<Int>, SignedIntTags {
+    public typealias Magnitude = RawValue.Magnitude
+    public typealias IntegerLiteralType = RawValue.IntegerLiteralType
+    public typealias Stride = RawValue.Stride
+    public typealias Words = RawValue.Words
+}
+
+
+

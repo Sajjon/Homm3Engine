@@ -40,19 +40,6 @@ public extension Creature {
 public extension Creature.Stats {
     typealias HealthPoints = UInt
     typealias Speed = UInt
-    typealias Defense = UInt
-}
-
-// MARK: Attack
-public extension Creature.Stats {
-    typealias Attack = NewType<CreatureAttackTag>
-    
-    final class CreatureAttackTag: TagBase<UInt>, UnsignedFixedWidthIntTags {
-        public typealias Magnitude = RawValue.Magnitude
-        public typealias IntegerLiteralType = RawValue.IntegerLiteralType
-        public typealias Stride = RawValue.Stride
-        public typealias Words = RawValue.Words
-    }
 }
 
 // MARK: Damage

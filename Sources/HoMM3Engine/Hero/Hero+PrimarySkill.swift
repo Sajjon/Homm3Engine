@@ -14,12 +14,10 @@ public extension Hero {
         public let spellPower: SpellPower
         public let knowledge: Knowledge
     }
-
+    
 }
 
 public extension Hero.PrimarySkills {
-    typealias Attack = UInt
-    typealias Defense = UInt
     typealias Knowledge = UInt
     typealias SpellPower = UInt
 }

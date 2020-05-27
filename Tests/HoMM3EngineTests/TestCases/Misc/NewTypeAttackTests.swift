@@ -8,9 +8,7 @@
 import XCTest
 @testable import HoMM3Engine
 
-private typealias Attack = Creature.Stats.Attack
-
-final class NewTypeTests: XCTestCase {
+final class NewTypeAttackTests: XCTestCase {
     
     private let a: Attack = 8
     private let b: Attack = 5
@@ -25,6 +23,13 @@ final class NewTypeTests: XCTestCase {
     
     func testSubtaction() {
         XCTAssertEqual(a - b, 3)
+    }
+    
+    func testConvertToModifier() {
+        let attack: Attack = 42
+        let combatModifier = CombatModifier(attack)
+        XCTAssertEqual(combatModifier, 42)
+        XCTAssertEqual(attack.toCombatModifier(), 42)
     }
     
     func testStride() {
@@ -56,4 +61,5 @@ final class NewTypeTests: XCTestCase {
         
         XCTAssertEqual(Attack(123457).magnitude as Attack, 123457)
     }
+
 }
