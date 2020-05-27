@@ -55,17 +55,18 @@ private extension CreatureStack {
     
     /// Attack modifier, primarily the Hero's attack strength + spells
     var attackModifier: Creature.Stats.Attack {
-        var attackModifier = controllingHero.primarySkills.attack
-        if hasSpell(.bloodlust) {
-            attackModifier += 3 // or 6 if Hero has advanced / expert Fire Magic
-            // This is NOT a sustainable solution
-        }
-        if isAffected(by: AnyTrait.disease) {
-            attackModifier -= 2
-        }
-        
-        // take into consideration: "native terrain or hero's creature specialties."
-        return attackModifier
+//        var attackModifier = controllingHero.primarySkills.attack
+//        if hasSpell(.bloodlust) {
+//            attackModifier += 3 // or 6 if Hero has advanced / expert Fire Magic
+//            // This is NOT a sustainable solution
+//        }
+//        if isAffected(by: AnyTrait.disease) {
+//            attackModifier -= 2
+//        }
+//
+//        // take into consideration: "native terrain or hero's creature specialties."
+//        return attackModifier
+        fatalError()
     }
     
     /// Creatures attack + modifier, primarily the Hero's attack strength
@@ -121,13 +122,15 @@ private extension CreatureStack {
         }()
         
         let I1: Double = {
-            guard attack > defense else { return 0 }
-            return 0.05 * (Double(attack - defense))
+//            guard attack > defense else { return 0 }
+//            return 0.05 * (Double(attack - defense))
+            fatalError()
         }()
         
         let R1: Double = {
-            guard defense > attack else { return 0 }
-            return 0.025 * (Double(defense - attack))
+//            guard defense > attack else { return 0 }
+//            return 0.025 * (Double(defense - attack))
+            fatalError()
         }()
         
         let I2: Double = {

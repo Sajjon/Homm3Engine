@@ -19,11 +19,11 @@ open class TagBase<RawValue>: BaseTag {
 
 public struct NewType<Tag: BaseTag> {
     public typealias RawValue = Tag.RawValue
-
+    
     public init(rawValue: Tag.RawValue) {
         self.rawValue = rawValue
     }
-
+    
     public var rawValue: Tag.RawValue
 }
 
@@ -142,7 +142,7 @@ public protocol ExpressibleByIntegerLiteralTag: BaseTag {
 
 extension NewType: ExpressibleByIntegerLiteral where Tag: ExpressibleByIntegerLiteralTag {
     public typealias IntegerLiteralType = Tag.IntegerLiteralType
-
+    
     public init(integerLiteral: IntegerLiteralType) {
         self.init(rawValue: Tag.integerLiteral(integerLiteral))
     }
@@ -169,11 +169,11 @@ extension AdditiveArithmeticTag where RawValue: AdditiveArithmetic {
 
 extension NewType: AdditiveArithmetic where Tag: AdditiveArithmeticTag {
     public static var zero: Self { .init(rawValue: Tag.zero) }
-
+    
     public static func + (lhs: Self, rhs: Self) -> Self {
         return .init(rawValue: Tag.addition(lhs.rawValue, rhs.rawValue))
     }
-
+    
     public static func - (lhs: Self, rhs: Self) -> Self {
         return .init(rawValue: Tag.subtraction(lhs.rawValue, rhs.rawValue))
     }
@@ -197,18 +197,18 @@ extension NumericTag where RawValue: Numeric, RawValue.Magnitude == Magnitude {
 
 extension NewType: Numeric where Tag: NumericTag {
     public typealias Magnitude = Tag.Magnitude
-
+    
     public init?<T>(exactly source: T) where T : BinaryInteger {
         guard let rawValue = Tag.exactly(source) else { return nil }
         self.init(rawValue: rawValue)
     }
-
+    
     public var magnitude: Tag.Magnitude { Tag.magnitude(of: rawValue) }
-
+    
     public static func * (lhs: Self, rhs: Self) -> Self {
         return .init(rawValue: Tag.multiplication(lhs.rawValue, rhs.rawValue))
     }
-
+    
     public static func *= (lhs: inout Self, rhs: Self) {
         Tag.inPlaceMultiplication(&lhs.rawValue, rhs.rawValue)
     }
@@ -224,7 +224,7 @@ extension SignedNumericTag {
     public static func negate(_ rawValue: inout RawValue) {
         rawValue = Self.subtraction(Self.zero, rawValue)
     }
-
+    
     public static func negative(of rawValue: RawValue) -> RawValue {
         return Self.subtraction(Self.zero, rawValue)
     }
@@ -244,7 +244,7 @@ extension NewType: SignedNumeric where Tag: SignedNumericTag {
 // MARK: Strideable
 public protocol StrideableTag: ComparableTag {
     associatedtype Stride: Comparable, SignedNumeric
-
+    
     static func advance(_ rawValue: RawValue, by n: Stride) -> RawValue
     static func distance(from start: RawValue, to end: RawValue) -> Stride
 }
@@ -253,7 +253,7 @@ extension StrideableTag where RawValue: Strideable, RawValue.Stride == Stride {
     public static func advance(_ rawValue: RawValue, by n: Stride) -> RawValue {
         return rawValue.advanced(by: n)
     }
-
+    
     public static func distance(from start: RawValue, to end: RawValue) -> Stride {
         return distance(from: start, to: end)
     }
@@ -261,11 +261,11 @@ extension StrideableTag where RawValue: Strideable, RawValue.Stride == Stride {
 
 extension NewType: Strideable where Tag: StrideableTag {
     public typealias Stride = Tag.Stride
-
+    
     public func advanced(by n: Tag.Stride) -> Self {
         return .init(rawValue: Tag.advance(rawValue, by: n))
     }
-
+    
     public func distance(to other: Self) -> Tag.Stride {
         return Tag.distance(from: rawValue, to: other.rawValue)
     }
@@ -328,7 +328,7 @@ extension NewType: BinaryInteger where Tag: BinaryIntegerTag, Self.Magnitude: Bi
     public init() {
         self.init(rawValue: Tag.newEmpty())
     }
-
+    
     public init?<T>(exactly source: T) where T: BinaryFloatingPoint {
         guard let rawValue = Tag.exactlyFloat(source) else { return nil }
         self.init(rawValue: rawValue)
@@ -453,7 +453,7 @@ extension BinaryIntegerTag where RawValue: BinaryInteger, RawValue.Words == Word
     public static func newEmpty() -> RawValue {
         RawValue()
     }
-
+    
     public static func bitWidth(of rawValue: RawValue) -> Int {
         rawValue.bitWidth
     }
@@ -470,7 +470,7 @@ extension BinaryIntegerTag where RawValue: BinaryInteger, RawValue.Words == Word
         RawValue.isSigned
     }
     
-    static func inverse(using rawValue: RawValue) -> RawValue {
+    public static func inverse(using rawValue: RawValue) -> RawValue {
         ~rawValue
     }
 }
@@ -507,14 +507,15 @@ public protocol FixedWidthIntegerTag: BinaryIntegerTag, LosslessStringConvertibl
     static func multipliedReportingOverflowFromRawValue(_ lhs: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool)
     static func dividingReportingOverflowFromRawValue(_ lhs: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool)
     static func remainderReportingOverflowFromRawValue(_ lhs: RawValue, _ rhs: RawValue) -> (partialValue: RawValue, overflow: Bool)
+    
     static func dividingFullWidthFromRawValue(_ base: RawValue, _ dividend: (high: RawValue, low: Magnitude)) -> (quotient: RawValue, remainder: RawValue)
     
-   static func nonzeroBitCountUsingRawValue(_ rawValue: RawValue) -> Int
-   static func leadingZeroBitCountUsingRawValue(_ rawValue: RawValue) -> Int
-   static func byteSwappedUsingRawValue(_ rawValue: RawValue) -> RawValue
+    static func nonzeroBitCountUsingRawValue(_ rawValue: RawValue) -> Int
+    static func leadingZeroBitCountUsingRawValue(_ rawValue: RawValue) -> Int
+    static func byteSwappedUsingRawValue(_ rawValue: RawValue) -> RawValue
 }
 
-extension FixedWidthIntegerTag where RawValue: FixedWidthInteger { //, RawValue.Words == Words {
+extension FixedWidthIntegerTag where RawValue: FixedWidthInteger, RawValue.Magnitude == Magnitude { //, RawValue.Words == Words {
     public static func fromText<S: StringProtocol>(_ text: S, radix: Int) -> RawValue? {
         RawValue(text, radix: radix)
     }
@@ -554,7 +555,7 @@ extension FixedWidthIntegerTag where RawValue: FixedWidthInteger { //, RawValue.
     }
     
     public static func dividingFullWidthFromRawValue(_ base: RawValue, _ dividend: (high: RawValue, low: RawValue.Magnitude)) -> (quotient: RawValue, remainder: RawValue) {
-        base.dividingFullWidth(dividend)
+        return base.dividingFullWidth((dividend.high, dividend.low))
     }
     
     public static func nonzeroBitCountUsingRawValue(_ rawValue: RawValue) -> Int {
@@ -607,7 +608,9 @@ extension NewType: FixedWidthInteger where Tag: FixedWidthIntegerTag, Self.Magni
     }
     
     public func dividingFullWidth(_ dividend: (high: Self, low: Tag.Magnitude)) -> (quotient: Self, remainder: Self) {
+        
         let (quotient, remainder) = Tag.dividingFullWidthFromRawValue(rawValue, (dividend.high.rawValue, dividend.low))
+        
         return (Self.init(rawValue: quotient), Self.init(rawValue: remainder))
     }
     
@@ -632,3 +635,25 @@ extension NewType: FixedWidthInteger where Tag: FixedWidthIntegerTag, Self.Magni
         self.init(rawValue: Tag.truncatingBits(bits))
     }
 }
+
+// MARK: UnsignedIntegerTag
+public protocol UnsignedIntegerTag: BinaryIntegerTag {}
+
+extension NewType: UnsignedInteger
+where
+    Tag: UnsignedIntegerTag,
+    Self.Magnitude: BinaryInteger,
+    Self.Magnitude == Self.Magnitude.Magnitude
+{}
+
+
+// MARK: UnsignedInt Tags
+protocol UnsignedTags: CommonTags, UnsignedIntegerTag { }
+extension TagBase where RawValue == UInt {
+    public typealias Magnitude = RawValue.Magnitude
+    public typealias IntegerLiteralType = RawValue.IntegerLiteralType
+    public typealias Stride = RawValue.Stride
+    public typealias Words = RawValue.Words
+}
+
+protocol UnsignedFixedWidthIntTags: UnsignedTags, FixedWidthIntegerTag { }
