@@ -103,6 +103,7 @@ public struct Hero: Hashable, Codable, CustomStringConvertible {
     public let secondarySkills: [SecondarySkill]
     public let spellBook: SpellBook?
     public let movementPoints: MovementPoints
+    public let artifacts: [Artifact]
     
     public init(
         trivia: Trivia,
@@ -112,7 +113,8 @@ public struct Hero: Hashable, Codable, CustomStringConvertible {
         primarySkills: PrimarySkills? = nil,
         secondarySkills:  [SecondarySkill],
         spellBook: SpellBook? = nil,
-        movementPoints: MovementPoints = .init()
+        movementPoints: MovementPoints = .init(),
+        artifacts: [Artifact] = []
     ) {
         self.trivia = trivia
         self.level = level
@@ -122,6 +124,7 @@ public struct Hero: Hashable, Codable, CustomStringConvertible {
         self.secondarySkills = secondarySkills
         self.spellBook = spellBook
         self.movementPoints = movementPoints
+        self.artifacts = artifacts
     }
 }
 

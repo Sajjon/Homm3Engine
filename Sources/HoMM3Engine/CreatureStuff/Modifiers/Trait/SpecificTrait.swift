@@ -9,11 +9,21 @@ import Foundation
 
 public protocol SpecificTrait: Trait {
     associatedtype SpecificContent
-    var description: AnyTrait { get }
+    var info: AnyTrait { get }
 }
 
 public extension SpecificTrait {
-    var uniqueName: CamelCasedStringAaZz { description.uniqueName }
-    var displayName: String { description.displayName }
-    var detailedDescription: String { description.detailedDescription }
+    var uniqueName: CamelCasedStringAaZz { info.uniqueName }
+    var displayName: String { info.displayName }
+    var detailedDescription: String { info.detailedDescription }
+}
+
+public extension SpecificTrait where Self: CustomStringConvertible {
+    var description: String {
+        displayName
+    }
+    
+    var name: String {
+          displayName
+      }
 }

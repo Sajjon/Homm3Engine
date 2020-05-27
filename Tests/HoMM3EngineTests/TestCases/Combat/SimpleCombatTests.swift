@@ -15,10 +15,20 @@ final class SimpleCombatTests: XCTestCase {
         let solmyr🔴 = Hero.solmyr(ownedBy: .red)
         let serena🔵 = Hero.serena(ownedBy: .blue)
         
-        var blackDragons = BlackDragon.stack(of: 3, controlledBy: solmyr🔴)
-        var redDragons = RedDragon.stack(of: 5, controlledBy: serena🔵)
+        let blackDragons = BlackDragon.stack(of: 3, controlledBy: solmyr🔴)
+        let redDragons = RedDragon.stack(of: 5, controlledBy: serena🔵)
         
-        blackDragons.attack(&redDragons)
+        let (minDamage, maxDamage) = blackDragons.damageInterval(
+            whenAttackin: redDragons,
+            type: .melee
+        )
+        
+        XCTAssertEqual(minDamage, 1)
+        XCTAssertEqual(maxDamage, 10)
+        
+//        let attackingArmy = Army.init(hero: solmyr🔴, creatureStacks: [])
+        
+//        Battle.between(attacker: <#T##Army#>, andDefender: <#T##Army#>)
     }
 
 }

@@ -9,7 +9,7 @@ import Foundation
 
 public struct Spell: Modifier, Hashable, Codable {
     public let context: Context
-    public let name: String
+    public let displayName: String
 }
 
 public extension Spell {
@@ -23,7 +23,7 @@ public extension Spell {
         }
     }
     static func combat(_ name: String) -> Self {
-        .init(context: .combat, name: name)
+        .init(context: .combat, displayName: name)
     }
 }
 

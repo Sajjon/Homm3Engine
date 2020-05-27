@@ -19,7 +19,7 @@ public extension AttackType {
      }
 }
 
-public struct CreatureStack {
+public struct CreatureStack: Hashable, Codable, CustomStringConvertible {
     
     public private(set) var creatureType: Creature
     private let startingQuantity: Quantity
@@ -28,7 +28,6 @@ public struct CreatureStack {
     public let controllingHero: Hero
     public private(set) var inflictedDamage: Damage?
     
-    /// E.g. spells
     public private(set) var modifiers = [Modifier]()
     
     public init(of creatureType: Creature, quantity: Quantity, controlledBy hero: Hero) {
@@ -36,6 +35,12 @@ public struct CreatureStack {
         self.startingQuantity = quantity
         self.currentQuantity = quantity
         self.controllingHero = hero
+    }
+}
+
+public extension CreatureStack {
+    var description: String {
+        "\(currentQuantity) \(creatureType)"
     }
 }
 
@@ -103,11 +108,12 @@ private extension CreatureStack {
     
     // https://heroes.thelazy.net/index.php/Damage#The_damage_calculation_formula
     // VCMI: https://github.com/vcmi/vcmi/blob/cc75b859d49c6bf43a1f55769b1a6aad5290d851/lib/battle/CBattleInfoCallback.cpp#L711-L963
-    static func calculateDamage(
+    static func calculateDamageInterval(
         causedBy attackingStack: Self,
         attacking targetStack: Self,
-        attackType: AttackType
-    ) -> Damage {
+        attackType: AttackType,
+        randomness: RandomNumberGenerator = SeededGenerator()
+    ) -> (min: Damage, max: Damage) {
         
         let attackingHero = attackingStack.controllingHero
         let attack = attackingStack.totalAttack
@@ -195,7 +201,25 @@ private extension CreatureStack {
             }
         }()
         
-        let I4: Double = 1
+        // Luck modifier
+        let I4: Double = {
+            // The luck variable may be either 0 or 1.00,
+            // depending on whether or not the attacking
+            // creatures gets "a lucky strike". This is
+            // determined by the combat variable luck,
+            // which may be 0 (neutral),
+            // +1 (positive), +2 (good) or +3 (excellent).
+            // These values determine how often lucky
+            // strikes occur. These probabilities are,
+            // respectively, 0/24 (0%), 1/24 (4.17%),
+            // 1/12 (8.33%) and 1/8 (12.5%). Luck may
+            // be affected by artifacts, adventure map
+            // locations, spells and the Luck secondary skill.
+
+            let gotLucky = false
+            return gotLucky ? 1 : 0
+        }()
+        
         let I5: Double = 1
         let R2: Double = 1
         let R3: Double = 1
@@ -205,7 +229,9 @@ private extension CreatureStack {
         let R7: Double = 1
         let R8: Double = 1
         let DMGf = Double(DMGb) * (1 + I1 + I2 + I3 + I4 + I5) * (1 - R1) * (1 - R2 - R3) * (1 - R4) * (1 - R5) * (1 - R6) * (1 - R7) * (1 - R8)
-        return Damage(DMGf)
+        
+        // TODO calc min, max
+        return (min: 0, max: Damage(DMGf))
     }
 }
 
@@ -260,9 +286,20 @@ public extension CreatureStack {
     }
     
     mutating func attack(_ targetStack: inout Self) {
-//        fatalError()
+        fatalError()
     }
     
+    func damageInterval(
+        whenAttackin targetStack: Self,
+        type attackType: AttackType
+    ) -> (min: Damage, max: Damage) {
+        
+        Self.calculateDamageInterval(
+            causedBy: self,
+            attacking: targetStack,
+            attackType: attackType
+        )
+    }
     
 }
 
@@ -287,5 +324,35 @@ public extension CreatureStack {
     
     func isAffected<M>(by modifier: M) -> Bool where M: Modifier & Equatable {
         modifiers.compactMap({ $0 as? M }).contains(modifier)
+    }
+}
+
+// MARK: Codable
+public extension CreatureStack {
+    func encode(to encoder: Encoder) throws {
+         fatalError()
+     }
+     
+     init(from decoder: Decoder) throws {
+         fatalError()
+     }
+}
+
+// MARK: Equatable
+public extension CreatureStack {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        // TODO include all relevant fields
+        lhs.creatureType == rhs.creatureType
+            &&
+        lhs.currentQuantity == rhs.currentQuantity
+
+    }
+}
+
+// MARK: Hashable
+public extension CreatureStack {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(creatureType)
+        hasher.combine(currentQuantity)
     }
 }

@@ -25,6 +25,8 @@ public extension Battlefield {
         }
     }
 }
+
+
 public extension Battlefield.Trait {
     static let obstacle = Self(
         name: "Obstacle",
