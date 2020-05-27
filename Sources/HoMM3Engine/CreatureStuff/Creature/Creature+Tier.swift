@@ -9,19 +9,16 @@ import Foundation
 
 // MARK: Tier
 public extension Creature {
-    struct Tier: Hashable, ExpressibleByIntegerLiteral, CustomStringConvertible {
-        public let level: Int
-        public init(level: Int) {
-            self.level = level
-        }
-    }
-}
+//    struct Tier: Hashable, Codable, ExpressibleByIntegerLiteral, CustomStringConvertible {
+//        public let level: Int
+//        public init(level: Int) {
+//            self.level = level
+//        }
+//    }
+    
+    typealias Tier = NewType<TierTag>
+    final class TierTag: UIntTagBase {}
 
-// MARK: ExpressibleByIntegerLiteral
-public extension Creature.Tier {
-    init(integerLiteral value: Int) {
-        self.init(level: value)
-    }
 }
 
 public extension Creature.Tier {
@@ -37,5 +34,8 @@ public extension Creature.Tier {
 
 // MARK: CustomStringConvertible
 public extension Creature.Tier {
+    
+    var level: RawValue { rawValue }
+    
     var description: String { .init(describing: level) }
 }

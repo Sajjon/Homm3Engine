@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: Creature
-public struct Creature: Hashable, CustomStringConvertible {
+public struct Creature: Hashable, Codable, CustomStringConvertible {
     
     /// This is what  groups together a red dragon and a black dragon, this value is the
     /// same for both of these creatures. The name of the creature is defined by

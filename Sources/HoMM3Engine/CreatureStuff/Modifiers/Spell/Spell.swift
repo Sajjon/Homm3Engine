@@ -7,13 +7,13 @@
 
 import Foundation
 
-public struct Spell: Modifier, Equatable {
+public struct Spell: Modifier, Hashable, Codable {
     public let context: Context
     public let name: String
 }
 
 public extension Spell {
-    struct Context: Equatable, ExpressibleByStringLiteral {
+    struct Context: Hashable, Codable, ExpressibleByStringLiteral {
         public let name: String
         public init(name: String) {
             self.name = name
@@ -33,6 +33,9 @@ public extension Spell.Context {
 }
 
 public extension Spell {
-    static let curse: Spell = .combat("Curse")
+    static let bless: Spell = .combat("Bless")
     static let bloodlust: Spell = .combat("Bloodlust")
+    static let chainLightning: Spell = .combat("Chain Lightning")
+    static let curse: Spell = .combat("Curse")
+    static let dispel: Spell = .combat("Dispel")
 }

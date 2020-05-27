@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Player: Equatable, CustomStringConvertible, ExpressibleByStringLiteral {
+public struct Player: Hashable, Codable, CustomStringConvertible, ExpressibleByStringLiteral {
     public let name: String
 }
 

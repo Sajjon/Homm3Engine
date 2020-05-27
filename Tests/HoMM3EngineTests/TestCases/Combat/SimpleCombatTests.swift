@@ -20,4 +20,6 @@ final class SimpleCombatTests: XCTestCase {
         
         blackDragons.attack(&redDragons)
     }
+
 }
+

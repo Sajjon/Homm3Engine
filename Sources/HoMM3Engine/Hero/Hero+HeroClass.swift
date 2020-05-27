@@ -8,7 +8,7 @@
 import Foundation
 
 public extension Hero {
-    struct HeroClass: Equatable {
+    struct HeroClass: Hashable, Codable {
         public let name: String
         public let nativeFaction: Faction
         public let startingPrimarySkills: Hero.PrimarySkills

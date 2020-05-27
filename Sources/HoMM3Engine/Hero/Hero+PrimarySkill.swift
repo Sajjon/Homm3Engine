@@ -8,7 +8,7 @@
 import Foundation
 
 public extension Hero {
-    struct PrimarySkills: Equatable {
+    struct PrimarySkills: Hashable, Codable {
         public let attack: Attack
         public let defense: Defense
         public let spellPower: SpellPower

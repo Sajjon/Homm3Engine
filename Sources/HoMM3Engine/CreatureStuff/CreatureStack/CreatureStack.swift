@@ -7,9 +7,20 @@
 
 import Foundation
 
+public enum AttackType: Int, Equatable {
+    case melee, ranged
+}
+public extension AttackType {
+    var isRanged: Bool {
+        self == .ranged
+    }
+    var isMelee: Bool {
+         self == .melee
+     }
+}
+
 public struct CreatureStack {
     
-    //    public private(set) var state: State
     public private(set) var creatureType: Creature
     private let startingQuantity: Quantity
     private var currentQuantity: Quantity
@@ -48,24 +59,23 @@ private extension CreatureStack {
     }
     
     var healthPointsOfCurrentDefender: Creature.Stats.HealthPoints {
-        let apa = creatureHealthPoints - inflictedDamage
-        assert(apa > 0)
-        return apa
+        let healthPointsOfCurrentDefender = creatureHealthPoints - inflictedDamage
+        assert(healthPointsOfCurrentDefender > 0)
+        return healthPointsOfCurrentDefender
     }
     
     /// Attack modifier, primarily the Hero's attack strength + spells
     var attackModifier: Attack {
-        var attackModifier = controllingHero.primarySkills.attack
-        if hasSpell(.bloodlust) {
+        var attackModifier: Attack = controllingHero.primarySkills.attack
+        if hasActiveSpell(.bloodlust) {
             attackModifier += 3 // or 6 if Hero has advanced / expert Fire Magic
             // This is NOT a sustainable solution
         }
         if isAffected(by: AnyTrait.disease) {
-            assert(attackModifier >= 2)
             attackModifier -= 2
         }
 
-        // take into consideration: "native terrain or hero's creature specialties."
+        // TODO: take into consideration: "native terrain or hero's creature specialties."
         return attackModifier
     }
     
@@ -76,14 +86,13 @@ private extension CreatureStack {
     
     /// Defense modifier, primarily the Hero's defense strength + spells
     var defenseModifier: Defense {
-        var defenseModifier = controllingHero.primarySkills.defense
+        var defenseModifier: Defense = controllingHero.primarySkills.defense
         if isAffected(by: AnyTrait.disease) {
             // This is NOT a sustainable solution
-             assert(defenseModifier >= 2)
             defenseModifier -= 2
         }
 
-        // take into consideration: "native terrain or hero's creature specialties."
+        // TODO: take into consideration: "native terrain or hero's creature specialties."
         return defenseModifier
     }
     
@@ -92,12 +101,20 @@ private extension CreatureStack {
         creatureType.stats.defense + defenseModifier
     }
     
-    /// https://heroes.thelazy.net/index.php/Damage#The_damage_calculation_formula
-    static func calculateDamage(causedBy attackingStack: Self, attacking targetStack: Self) -> Damage {
+    // https://heroes.thelazy.net/index.php/Damage#The_damage_calculation_formula
+    // VCMI: https://github.com/vcmi/vcmi/blob/cc75b859d49c6bf43a1f55769b1a6aad5290d851/lib/battle/CBattleInfoCallback.cpp#L711-L963
+    static func calculateDamage(
+        causedBy attackingStack: Self,
+        attacking targetStack: Self,
+        attackType: AttackType
+    ) -> Damage {
+        
         let attackingHero = attackingStack.controllingHero
         let attack = attackingStack.totalAttack
         let defense = targetStack.totalDefense
-        let isRangedAttack = false
+        
+        let isRangedAttack = attackType.isRanged
+        let isMeleeAttack = attackType.isMelee
         
         let DMGb: Damage = {
             let minDamage = attackingStack.creatureType.stats.damage.minumumDamage
@@ -160,7 +177,24 @@ private extension CreatureStack {
             }
         }()
         
-        let I3: Double = 1
+        let I3: Double = {
+            
+            // Orrin and Gundula has Hero speciality `Archery`
+            // Crag Hack Hero specialty "Offense"
+            if
+                attackingHero.hasSpecialty(skill: .offense) && isMeleeAttack
+                    ||
+                attackingHero.hasSpecialty(skill: .archery) && isRangedAttack
+            {
+                return 0.05 * I2 * Double(attackingHero.level)
+            } else if attackingHero.hasSpecialty(spell: .bless) && attackingStack.isBlessed {
+                // special case Adela's bless
+                return 0.03 * (Double(attackingHero.level) / Double(attackingStack.creatureType.tier) )
+            } else {
+                return 0
+            }
+        }()
+        
         let I4: Double = 1
         let I5: Double = 1
         let R2: Double = 1
@@ -240,10 +274,14 @@ public extension CreatureStack {
     }
     
     var isCursed: Bool {
-        hasSpell(.curse)
+        hasActiveSpell(.curse)
     }
     
-    func hasSpell(_ spell: Spell) -> Bool {
+    var isBlessed: Bool {
+          hasActiveSpell(.bless)
+      }
+    
+    func hasActiveSpell(_ spell: Spell) -> Bool {
         activeSpells.contains(spell)
     }
     

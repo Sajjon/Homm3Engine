@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: Faction
-public struct Faction: Hashable, ExpressibleByStringLiteral, CustomStringConvertible {
+public struct Faction: Hashable, Codable, ExpressibleByStringLiteral, CustomStringConvertible {
     public let name: String
     public init(name: String) {
         self.name = name

@@ -9,7 +9,7 @@ import Foundation
 // MARK: CamelCasedStringAaZz
 
 /// A non empty, camel cased human readable name with leading lower case letter, with only letters [a-zA-Z] that must be unique
-public struct CamelCasedStringAaZz: Hashable, ExpressibleByStringLiteral {
+public struct CamelCasedStringAaZz: Hashable, Codable, ExpressibleByStringLiteral {
     private let value: String
     public init(value: String) {
         precondition(!value.isEmpty)

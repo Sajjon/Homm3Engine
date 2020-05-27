@@ -8,7 +8,7 @@
 import Foundation
 
 public extension Creature {
-    struct Stats: Equatable {
+    struct Stats: Hashable, Codable {
         /// The maximum health point of this creature, as in, this value does not reflect the
         /// current state of any creature in battle, that might be wounded, but rather, the
         /// maximum health point the creature *type* has.
@@ -44,13 +44,22 @@ public extension Creature.Stats {
 
 // MARK: Damage
 public extension Creature.Stats {
-    enum Damage: Hashable {
+    enum Damage: Hashable, Codable {
         case fixed(Value)
         case range(min: Value, max: Value)
     }
 }
 
 public extension Creature.Stats.Damage {
+    
+    func encode(to encoder: Encoder) throws {
+        fatalError()
+    }
+    
+    init(from decoder: Decoder) throws {
+        fatalError()
+    }
+    
     typealias Value = UInt
     
     var minumumDamage: Value {
