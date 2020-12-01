@@ -97,7 +97,7 @@ public final class Hero: Codable, CustomStringConvertible {
     
     public let trivia: Trivia
 
-    public let experiencePoints: ExperiencePoints
+    public private(set) var experiencePoints: ExperiencePoints
     public let owner: Player
     public let specialty: Specialty
     public let primarySkills: PrimarySkills
@@ -224,6 +224,14 @@ public extension Hero {
     var level: Level {
         Hero.levelFromExperiencePoints(self.experiencePoints)
     }
+    
+    @discardableResult
+    func awardExperiencePoints(_ xpIncrement: ExperiencePoints) -> SelfC {
+        self.experiencePoints += xpIncrement
+        return self
+    }
+    
+    typealias SelfC = Hero
 }
 
 public extension Hero {

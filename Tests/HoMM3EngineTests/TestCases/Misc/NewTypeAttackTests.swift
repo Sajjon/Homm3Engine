@@ -41,6 +41,12 @@ final class NewTypeAttackTests: XCTestCase {
         XCTAssertEqual(array, [10, 20, 30])
     }
     
+    func testHexTileStride() {
+        let battlefield = Battlefield(terrain: .dirt)
+        let arrayFromRange = (0..<battlefield.size.width).map(Int.init)
+        XCTAssertEqual(arrayFromRange.count, 15)
+    }
+    
     // MARK: FixedWidthInteger
     func testDividingFullWidth() {
         

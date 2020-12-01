@@ -20,18 +20,18 @@ public extension AttackType {
 }
 
 public extension Combat {
-    final class CreatureStack: Codable, CustomStringConvertible {
+    final class CreatureStack: Equatable, Codable, CustomStringConvertible {
         
         public private(set) var creatureType: Creature
         public let startingQuantity: Quantity
         
         private var currentQuantity: Quantity
         public private(set) var perishedQuanity: Quantity = 0
-//        public var controllingHero: Hero?
-        
-        private unowned let army: Army
-        private unowned let combat: Combat
+         
+        private let startingPositionOnBattlefield: Battlefield.HexTile
         public let positionOnBattleField: Battlefield.HexTile
+        
+        private unowned let fightingInArmy: FightingArmy
         
         public private(set) var inflictedDamage: Damage?
         
@@ -40,13 +40,14 @@ public extension Combat {
         public init(
             _ quantity: Quantity,
             type creatureType: Creature,
-            army: Army,
-            combat: Combat,
+//            combat: Combat,
+            fightingInArmy: FightingArmy,
             tile: Battlefield.HexTile
         ) {
             self.creatureType = creatureType
-            self.army = army
-            self.combat = combat
+            self.fightingInArmy = fightingInArmy
+//            self.combat = combat
+            self.startingPositionOnBattlefield = tile
             self.positionOnBattleField = tile
             self.startingQuantity = quantity
             self.currentQuantity = quantity
@@ -55,7 +56,7 @@ public extension Combat {
         public init(from decoder: Decoder) throws {
             fatalError()
         }
-        public var controllingHero: Hero? { army.hero }
+        public var controllingHero: Hero? { fightingInArmy.hero }
     }
     
 }
@@ -262,6 +263,16 @@ public extension Combat.CreatureStack {
     typealias Quantity = UInt
     typealias Damage = Creature.Stats.HealthPoints
     
+    var isAlive: Bool {
+        currentQuantity > 0
+    }
+    
+    var initiative: Creature.Stats.Speed {
+        let initiative = creatureType.stats.speed
+        // TODO add modifiers, spell, hero artifacts etc
+        return initiative
+    }
+    
     var isWounded: Bool {
         inflictedDamage != nil
     }
@@ -353,5 +364,12 @@ public extension Combat.CreatureStack {
 public extension Combat.CreatureStack {
     func encode(to encoder: Encoder) throws {
         fatalError()
+    }
+}
+
+// MARK: Equatable
+public extension Combat.CreatureStack {
+    static func == (lhs: Combat.CreatureStack, rhs: Combat.CreatureStack) -> Bool {
+       lhs === rhs
     }
 }

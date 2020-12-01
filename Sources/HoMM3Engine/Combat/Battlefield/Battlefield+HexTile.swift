@@ -2,83 +2,52 @@
 //  File.swift
 //  
 //
-//  Created by Alexander Cyon on 2020-05-25.
+//  Created by Alexander Cyon on 2020-05-29.
 //
 
 import Foundation
 
-public struct Terrain: Hashable, CustomStringConvertible {
-    public let displayName: String
-    public let movementCost: MovementCost
-}
-
-public extension Terrain {
-    var description: String { displayName }
-}
-
-public extension Terrain {
-    struct MovementCost: Hashable {
-        public typealias Value = UInt
-        
-        public let straightMove: Value
-        public let diagonalMove: Value
-    }
-}
-
-public extension Terrain {
-    private static func declare(
-        _ displayName: String,
-        movementCost: (
-        straight: MovementCost.Value,
-        diagnonal: MovementCost.Value) = (100, 141)
-    ) -> Self {
-        Self.init(displayName: displayName, movementCost: .init(straightMove: movementCost.straight, diagonalMove: movementCost.diagnonal))
-    }
-    
-    static let grass = Self.declare("Grass")
-    static let dirt = Self.declare("Dirt")
-
-    static let lava = Self.declare("Lava")
-    static let subterranean = Self.declare("Subterranean")
-    static let water = Self.declare("Water")
-    
-    static let rough = Self.declare("Grass", movementCost: (125, 176))
-
-    static let sand = Self.declare("Sand", movementCost: (150, 212))
-    static let snow = Self.declare("Snow", movementCost: (150, 212))
-    static let swamp = Self.declare("Swamp", movementCost: (175, 247))
-
-    static let roadDirt = Self.declare("Dirt road", movementCost: (75, 106))
-    static let roadGravel = Self.declare("Gravel Road", movementCost: (65, 91))
-    static let roadCobbleStone = Self.declare("Cobblestone Road", movementCost: (50, 70))
-    static let favorableWind    = Self.declare("Favorable Wind", movementCost: (66, 93))
-}
-
-public struct Battlefield {
-    public let size: Size
-    public let terrain: Terrain
-    public init(size: Size = .default, terrain: Terrain) {
-        self.size = size
-        self.terrain = terrain
-    }
-}
-
 public extension Battlefield {
-    struct Size: Equatable {
-        public let width: HexTile.Value
-        public let height: HexTile.Value
-        
-        public static let `default` = Self(width: 15, height: 11)
-    }
-}
-
-public extension Battlefield {
-    struct HexTile: Equatable {
+    struct HexTile: Comparable, Hashable {
         public let row: HexTile.Value
         public let column: HexTile.Value
     }
 }
+
+// MARK: Comparable
 public extension Battlefield.HexTile {
+    static func < (lhs: Self, rhs: Self) -> Bool {
+        guard lhs.row < rhs.row else { return false }
+        return lhs.column < rhs.column
+    }
+}
+
+// MARK: Value
+public extension Battlefield.HexTile {
+    typealias Value = NewType<HexTileTag>
+    final class HexTileTag: UIntTagBase {}
+}
+
+extension Battlefield.HexTile.Value: ExpressibleByUnicodeScalarLiteral {
+    public typealias UnicodeScalarLiteralType = StringLiteralType
+}
+extension Battlefield.HexTile.Value: ExpressibleByExtendedGraphemeClusterLiteral {
+    public typealias ExtendedGraphemeClusterLiteralType = UnicodeScalarLiteralType
+}
+extension Battlefield.HexTile.Value: ExpressibleByStringLiteral {
+    public typealias StringLiteralType = String
+    public init(stringLiteral hexString: StringLiteralType) {
+        guard let fromHex = Self(hexString, radix: 16) else {
+            fatalError("bad literal: \(hexString)")
+        }
+        self = fromHex
+    }
+}
+
+
+// MARK: Named
+public extension Battlefield.HexTile {
+    
     // MARK: Row 0
     static let r0c0 = Self(row: 0, column: 0)
     static let r0c1 = Self(row: 0, column: 1)
@@ -113,6 +82,7 @@ public extension Battlefield.HexTile {
     static let r1cD = Self(row: 1, column: "D")
     static let r1cE = Self(row: 1, column: "E")
     
+    // MARK: Row 2
     static let r2c0 = Self(row: 2, column: 0)
     static let r2c1 = Self(row: 2, column: 1)
     static let r2c2 = Self(row: 2, column: 2)
@@ -129,6 +99,8 @@ public extension Battlefield.HexTile {
     static let r2cD = Self(row: 2, column: "D")
     static let r2cE = Self(row: 2, column: "E")
     
+    
+    // MARK: Row 3
     static let r3c0 = Self(row: 3, column: 0)
     static let r3c1 = Self(row: 3, column: 1)
     static let r3c2 = Self(row: 3, column: 2)
@@ -145,6 +117,8 @@ public extension Battlefield.HexTile {
     static let r3cD = Self(row: 3, column: "D")
     static let r3cE = Self(row: 3, column: "E")
     
+    
+    // MARK: Row 4
     static let r4c0 = Self(row: 4, column: 0)
     static let r4c1 = Self(row: 4, column: 1)
     static let r4c2 = Self(row: 4, column: 2)
@@ -161,6 +135,7 @@ public extension Battlefield.HexTile {
     static let r4cD = Self(row: 4, column: "D")
     static let r4cE = Self(row: 4, column: "E")
     
+    // MARK: Row 5
     static let r5c0 = Self(row: 5, column: 0)
     static let r5c1 = Self(row: 5, column: 1)
     static let r5c2 = Self(row: 5, column: 2)
@@ -177,6 +152,7 @@ public extension Battlefield.HexTile {
     static let r5cD = Self(row: 5, column: "D")
     static let r5cE = Self(row: 5, column: "E")
     
+    // MARK: Row 6
     static let r6c0 = Self(row: 6, column: 0)
     static let r6c1 = Self(row: 6, column: 1)
     static let r6c2 = Self(row: 6, column: 2)
@@ -193,6 +169,7 @@ public extension Battlefield.HexTile {
     static let r6cD = Self(row: 6, column: "D")
     static let r6cE = Self(row: 6, column: "E")
     
+    // MARK: Row 7
     static let r7c0 = Self(row: 7, column: 0)
     static let r7c1 = Self(row: 7, column: 1)
     static let r7c2 = Self(row: 7, column: 2)
@@ -208,7 +185,8 @@ public extension Battlefield.HexTile {
     static let r7cC = Self(row: 7, column: "C")
     static let r7cD = Self(row: 7, column: "D")
     static let r7cE = Self(row: 7, column: "E")
-    
+
+    // MARK: Row 8
     static let r8c0 = Self(row: 8, column: 0)
     static let r8c1 = Self(row: 8, column: 1)
     static let r8c2 = Self(row: 8, column: 2)
@@ -225,6 +203,7 @@ public extension Battlefield.HexTile {
     static let r8cD = Self(row: 8, column: "D")
     static let r8cE = Self(row: 8, column: "E")
     
+    // MARK: Row 9
     static let r9c0 = Self(row: 9, column: 0)
     static let r9c1 = Self(row: 9, column: 1)
     static let r9c2 = Self(row: 9, column: 2)
@@ -241,6 +220,7 @@ public extension Battlefield.HexTile {
     static let r9cD = Self(row: 9, column: "D")
     static let r9cE = Self(row: 9, column: "E")
     
+    // MARK: Row A (10(
     static let rAc0 = Self(row: "A", column: 0)
     static let rAc1 = Self(row: "A", column: 1)
     static let rAc2 = Self(row: "A", column: 2)
@@ -258,45 +238,4 @@ public extension Battlefield.HexTile {
     static let rAcE = Self(row: "A", column: "E")
 }
 
-public extension Battlefield.HexTile {
-    typealias Value = NewType<HexTileTag>
-    final class HexTileTag: UIntTagBase {}
-}
 
-extension Battlefield.HexTile.Value: ExpressibleByUnicodeScalarLiteral {
-    public typealias UnicodeScalarLiteralType = StringLiteralType
-}
-extension Battlefield.HexTile.Value: ExpressibleByExtendedGraphemeClusterLiteral {
-    public typealias ExtendedGraphemeClusterLiteralType = UnicodeScalarLiteralType
-}
-extension Battlefield.HexTile.Value: ExpressibleByStringLiteral {
-    public typealias StringLiteralType = String
-    public init(stringLiteral hexString: StringLiteralType) {
-        guard let fromHex = Self(hexString, radix: 16) else {
-            fatalError("bad literal: \(hexString)")
-        }
-        self = fromHex
-    }
-}
-
-public extension Battlefield {
-    
- 
-    /// An example of a 3x3 battle field, where every other row is offsetted
-    /// by half a tile in width, with half an empty hex tile, below denoted `_`
-    ///
-    /// _ t⁰ t¹ t²
-    /// t³ t⁴ t⁵ _
-    /// _ t⁶ t⁷ t⁸
-    ///
-    /// It is important to note that since the tiles are hex tiles, tiles that might would
-    /// have been diagonally adjascent to one another if they where square shaped.
-    func `is`(tile rhs: HexTile, adjecentTo lhs: HexTile) -> Bool {
-        guard rhs != lhs else { return false }
-        let rowDelta = abs(Int(rhs.row) - Int(lhs.row))
-        let columnDelta = abs(Int(rhs.column) - Int(lhs.column))
-        if columnDelta <= 1 && rowDelta <= 1 { return true }
-        return false
-    }
-    
-}

@@ -7,292 +7,231 @@
 
 import Foundation
 
-public final class Army: CustomStringConvertible {
-    
-    public let hero: Hero?
-    public private(set) var creatureStacks: [Creature.Stack]
-    
-    private init(
-        hero: Hero?,
-        creatureStacks: [Creature.Stack]
-    ) {
-        self.hero = hero
-        self.creatureStacks = creatureStacks
-//        self.creatureStacks.forEach {
-//            ifHaveHero(takeControlOf: $0)
-//        }
-    }
-    
-}
-
-public extension Army {
-    
-    typealias SelfC = Army
-    
-    convenience init(
-        creatureStacks: [Creature.Stack]
-    ) {
-        self.init(hero: nil, creatureStacks: creatureStacks)
-    }
-    
-    convenience init(
-        hero: Hero
-    ) {
-        self.init(hero: hero, creatureStacks: [])
-    }
-}
-
-extension Optional {
-    mutating func assertNilAndAssign(optional: Wrapped?) {
-        guard self == nil else {
-            fatalError("Expected optional to be nil before setting it.")
-        }
-        self = optional
-    }
-}
-
-public extension Creature {
-    struct Stack {
-        public typealias Quantity = UInt
-        
-        public let quantity: Quantity
-        public let creatureType: Creature
-        
-    }
-    
-    func stack(of quantity: Stack.Quantity) -> Stack {
-        .init(quantity: quantity, creatureType: self)
-    }
-}
-
-//private extension Army {
-//    func ifHaveHero(takeControlOf creatureStack: CreatureStack) {
-//        defer {  creatureStack.controllingHero.assertNilAndAssign(optional: hero) }
-//        guard let hero = hero else {
-//            return
-//        }
-//        if let heroOfStack = creatureStack.controllingHero {
-//            assert(heroOfStack === hero)
-//        }
-//
-//    }
-//}
-
-public extension Army {
-    
-    @discardableResult
-    func add(creatureStack: Creature.Stack) -> SelfC {
-        creatureStacks.append(creatureStack)
-//        ifHaveHero(takeControlOf: creatureStack)
-        return self
-    }
-    
-}
-
-public extension Army {
-    var description: String {
-        if let hero = hero {
-            return "\(hero) \(creatureStacks) "
-        } else {
-            return String(describing: creatureStacks)
-        }
-    }
-}
-
-extension Combat.CreatureStack {
-    public typealias Tag = NewType<CreatureStackTagTag>
-    public final class CreatureStackTagTag: UIntTagBase {}
-}
-
-public extension Combat {
-    struct CreatureStackTagMapping: ExpressibleByDictionaryLiteral {
-        public typealias Tag = Combat.CreatureStack.Tag
-        public typealias Key = Tag
-        public typealias Value = Combat.CreatureStack
-        
-        public let tagToStack: [Combat.CreatureStack.Tag: Combat.CreatureStack]
-        
-        public init(map: [Combat.CreatureStack.Tag: Combat.CreatureStack]) {
-            self.tagToStack = map
-        }
-        
-        public init(dictionaryLiteral elements: (Self.Key, Self.Value)...) {
-            self.init(map: .init(uniqueKeysWithValues: elements))
-        }
-    }
-}
-
-public final class Encounter {
-    
-    public unowned let attacker: Army
-     public unowned let defender: Army
-     public let battleField: Battlefield
-     
-     public init(betweenAttacker attacker: Army, defender: Army, on battleField: Battlefield) {
-         self.attacker = attacker
-         self.defender = defender
-         self.battleField = battleField
-     }
-
-    
-    func startCombat(
-        _ tagCreatureStacks: (_ attacker: Combat.FightingArmy, _ defender: Combat.FightingArmy) -> Combat.CreatureStackTagMapping,
-        _ playCombat: (Combat) throws -> Combat.LoserOutcome
-    ) rethrows -> Combat.Report {
-        
-        let combat = Combat(battleField: battleField)
-        
-        func mapS(_ creatureStack: Creature.Stack, stackIndex: Int, isAttacker: Bool) -> Combat.CreatureStack {
-
-            func assignStackTile() -> Battlefield.HexTile {
-                .init(row: Battlefield.HexTile.Value(stackIndex), column: isAttacker ? 0 : battleField.size.width)
-            }
-            
-            let army = isAttacker ? self.attacker : self.defender
-            
-            return Combat.CreatureStack(
-                creatureStack.quantity,
-                type: creatureStack.creatureType,
-                army: army,
-                combat: combat,
-                tile: assignStackTile()
-            )
-        }
-        
-        let aggressor = Combat.FightingArmy(
-            hero: attacker.hero,
-            creatureStacks: attacker.creatureStacks.enumerated().map { mapS($0.element, stackIndex: $0.offset, isAttacker: true) }
-        )
-        
-        let victim = Combat.FightingArmy(
-            hero: defender.hero,
-            creatureStacks: defender.creatureStacks.enumerated().map { mapS($0.element, stackIndex: $0.offset, isAttacker: false) }
-        )
-        
-        combat.attacker = aggressor
-        combat.defender = victim
-        
-        combat.tagToStackMap = tagCreatureStacks(aggressor, victim)
-        
-        let outcome = try playCombat(combat)
-        
-        return Combat.Report(winner: attacker, loserOutcome: outcome)
-    }
-}
-
 
 public final class Combat: CustomStringConvertible {
     
-    public func stack(tag: Combat.CreatureStackTagMapping.Tag/*, in army: FightingArmy*/) -> Combat.CreatureStack {
-        guard
-            let mapping = tagToStackMap?.tagToStack,
-            let stack = mapping[tag]
-        else { fatalError("no mapping or stack for tag") }
-        return stack
+    public private(set) var isFinished = false
+    
+    private var rounds: [Round] = []
+    private var currentRound: Round { rounds.last! }
+    
+    public let battlefield: Battlefield
+    private let aggressor: FightingArmy
+    private let protector: FightingArmy
+    
+    public init(
+        battlefield: Battlefield,
+        attackingArmy: Army,
+        defendingArmy: Army
+    ) {
+        self.battlefield = battlefield
+        
+        self.aggressor = .init(
+            army: attackingArmy,
+            battlefield: battlefield,
+            isAttackingArmy: true
+        )
+        
+        self.protector = .init(
+            army: defendingArmy,
+            battlefield: battlefield,
+            isAttackingArmy: false
+        )
+        
+        prepareNextRound()
     }
+}
+
+public extension Combat {
+    var description: String {
+        "\(aggressor) vs \(protector) "
+    }
+}
+
+
+public extension Combat {
     
-//    public func agressorStack(_ tag: Combat.CreatureStackTagMapping.Tag) -> Combat.CreatureStack {
-//        creatureStack(tag, in: attacker)
-//    }
-//
-//    public func victimStack(_ tag: Combat.CreatureStackTagMapping.Tag) -> Combat.CreatureStack {
-//        creatureStack(tag, in: defender)
-//
-//    }
-    
-    public final class FightingArmy {
-        
-        public let hero: Hero?
-        public private(set) var creatureStacks: [Combat.CreatureStack]
-        
-        public init(
-            hero: Hero?,
-            creatureStacks: [Combat.CreatureStack]
-        ) {
-            self.hero = hero
+    final class TileContent {
+        /// Might be empty, only allowed to contain one alive stack, might contain dead stacks on index 1, 2...
+        public let creatureStacks: [CreatureStack]
+        public var aliveCreatureStack: CreatureStack? {
+            guard let alive = creatureStacks.first else {
+                return nil
+            }
+            assert(alive.isAlive)
+            return alive
+        }
+        public let tile: Battlefield.HexTile
+        public init(tile: Battlefield.HexTile, creatureStacks: [CreatureStack] = []) {
+            self.tile = tile
             self.creatureStacks = creatureStacks
         }
-        
     }
-
     
-    public fileprivate(set) var attacker: FightingArmy!
-    public fileprivate(set) var defender: FightingArmy!
-    fileprivate var tagToStackMap: CreatureStackTagMapping!
-    public let battleField: Battlefield
-    
-    fileprivate init(battleField: Battlefield) {
-        self.battleField = battleField
+    var tiles: [TileContent] {
+        let allCreatures: [CreatureStack] = [aggressor.creatureStacks, protector.creatureStacks].flatMap { $0 }
+        let creaturesSortedByTiles = allCreatures.sorted(by: \.positionOnBattleField, order: .ascending)
+        let creatureOnTiles = [Battlefield.HexTile: [CreatureStack]].init(grouping: creaturesSortedByTiles, by: { $0.positionOnBattleField })
+        var tiles = [TileContent]()
+        for tileIndex in 0...battlefield.indexOfLastTile {
+            let tile = battlefield.tile(at: tileIndex)
+            tiles.append(TileContent(tile: tile, creatureStacks: creatureOnTiles[tile] ?? []))
+        }
+        return tiles
     }
-
-    public private(set) var report: Report?
+    
+    //    func progress(
+    //        _ act: (_ firstStackToAct: Combat.CreatureStack) throws -> Combat.Action
+    //    ) rethrows -> Combat.Result? {
+    //
+    //        var outcome: Combat.Result.LoserOutcome = .slaughtered
+    //
+    //        combatLoop: while let stack = nextCreatureStackToAct() {
+    //            do {
+    //                let action = try act(stack)
+    //
+    //                switch action {
+    //                case .creatureStackAction(let creatureStackAction):
+    //                    try creatureStack(stack, performsAction: creatureStackAction)
+    //                case .heroAction(let heroAction):
+    //                    switch heroAction {
+    //                    case .castSpell(let spell, let target):
+    //                        try castSpell(spell, on: target)
+    //                    case .retreat:
+    //                        outcome = retreat()
+    //                        break combatLoop
+    //                    case .surrender:
+    //                        outcome = surrender()
+    //                        break combatLoop
+    //                    }
+    //                }
+    //            } catch {
+    //                propagate(error: error)
+    //            }
+    //        }
+    //
+    //        let winningArmy = getWinner()
+    //        let losingArmy = getLoser()
+    //
+    //        return Combat.Result(
+    //            winner: .init(
+    //                hero: winningArmy.hero?.awardExperiencePoints(xpGainedByWinner()),
+    //                creatureStacks: winningArmy.survivingCreatureStacks()
+    //            ),
+    //            losingArmy: .init(
+    //                hero: losingArmy.hero,
+    //                creatureStacks: losingArmy.survivingCreatureStacks()
+    //            ),
+    //            loserOutcome: outcome
+    //        )
+    //    }
+    
+    func progress(
+        _ act: (_ firstStackToAct: Combat.CreatureStack, _ round: Round) throws -> Combat.Action
+    ) rethrows -> Combat.Result? {
+        return nil
+    }
 }
 
-public extension Combat {
-    
-    enum Action {
-        public struct StackAttack {
-            public let targetStack: CreatureStack
-            public let attackType: AttackType
-            public init(_ targetStack: CreatureStack, type attackType: AttackType = .melee) {
-                self.targetStack = targetStack
-                self.attackType = attackType
+public extension Array {
+    enum Order: Int, Equatable {
+        case ascending
+        case descending
+    }
+    func sorted<Property>(
+        by keyPath: KeyPath<Element, Property>,
+        order: Order
+    ) -> [Element] where Property: Comparable {
+        sorted { (lhs, rhs) -> Bool in
+            let lhsProperty = lhs[keyPath: keyPath]
+            let rhsProperty = rhs[keyPath: keyPath]
+            switch order {
+            case .ascending: return lhsProperty > rhsProperty
+            case .descending: return  lhsProperty < rhsProperty
             }
         }
-        case move(stack: CreatureStack, to: Battlefield.HexTile, attack: StackAttack? = nil)
-        case attack(StackAttack)
-        case defend(CreatureStack), wait(CreatureStack)
     }
-    
-    var description: String {
-        "\(attacker!) vs \(defender!) "
-    }
-    
-    var isFinished: Bool { report != nil }
 }
 
-public extension Combat {
+private extension Combat {
     
-    func autoPlay(randomness: RandomnessSource = .init(behaviour: .deterministic())) -> Report {
-        fatalError()
-    }
-    
-    func perform(action: Action) throws {
+    /// Performs an action for the current stack, then returns the next stack to act, if combat is not over
+    func creatureStack(_ stack: CreatureStack, performsAction action: CreatureStackAction) throws {
         switch action {
-        case .defend(let stack): "\(stack) defends"
-        case .wait(let stack): "\(stack) waits"
-        case .move(let stack, let destinationTile, let possibleAttack):
-            try move(stack: stack, to: destinationTile)
-            guard let attack = possibleAttack else {
+        case .defend:
+            implementMe("\(stack) defends")
+        case .wait:
+            implementMe("\(stack) waits")
+        case .move(let destinationTile, let possibleTiledAttacked):
+            try performMove(by: stack, to: destinationTile)
+            guard let tiledAttacked = possibleTiledAttacked else {
                 return
             }
-            
+            try performAttack(by: stack, onTile: tiledAttacked)
+        case .attackTile(let tiledAttacked):
+            try performAttack(by: stack, onTile: tiledAttacked)
         }
     }
     
-    private func move(stack: CreatureStack, to destinationTile: Battlefield.HexTile) throws {
+    @discardableResult
+    func prepareNextRound() -> Round {
+        let round = Round(
+            creaturesToAct:
+            [aggressor, protector]
+                .flatMap({ $0.creatureStacks })
+                .filter({ $0.isAlive })
+                .sorted(by: \.initiative, order: .descending)
+        )
+        rounds.append(round)
+        return round
+    }
+    
+    func getWinner() -> FightingArmy {
+        implementMe()
+    }
+    
+    func getLoser() -> FightingArmy {
+        implementMe()
+    }
+    
+    func nextCreatureStackToAct() -> CreatureStack? {
+        if let nextToAct = currentRound.nextCreatureStackToAct() {
+            return nextToAct
+        }
+        let nextRound = prepareNextRound()
+        return nextRound.nextCreatureStackToAct()
+    }
+    
+    func xpGainedByWinner() -> Hero.ExperiencePoints {
+        implementMe()
+    }
+    
+    func performMove(by stack: CreatureStack, to destinationTile: Battlefield.HexTile) throws {
         guard stack.positionOnBattleField != destinationTile else {
-            throw ActionError.ActionError
+            throw Action.Error.invalidMoveAlreadyOnTile
         }
-        
+        // Check teleport/flying/obstacles/creatures blocking/castle wall/ speed (range)
     }
     
-    enum ActionError: Swift.Error, Equatable {
-        case invalidMoveAlreadyOnTile
+    func performAttack(by stack: CreatureStack, onTile tileAttacked: Battlefield.HexTile) throws {
+        implementMe("Attack")
+    }
+    
+    func castSpell(_ spell: Spell, on targetCreatureStack: Combat.CreatureStack) throws {
+        implementMe("cast spell")
+    }
+    
+    func surrender() -> Combat.Result.LoserOutcome {
+        return .surrendered
+    }
+    
+    func retreat() -> Combat.Result.LoserOutcome {
+        return .retreated
     }
 }
 
-public extension Combat {
-    struct Report {
-        public unowned let winner: Army
-        
-        public let loserOutcome: LoserOutcome
-        
+private extension Combat.FightingArmy {
+    func survivingCreatureStacks() -> [Creature.Stack] {
+        fatalError()
     }
-    
-    enum LoserOutcome: String, Hashable, Codable, CustomStringConvertible {
-         case surrendered
-         case retreated
-         case slaughtered
-     }
 }
