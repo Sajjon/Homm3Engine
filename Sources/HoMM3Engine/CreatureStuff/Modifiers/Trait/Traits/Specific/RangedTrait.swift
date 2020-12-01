@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct TraitRanged: SpecificTrait, Hashable, Codable, CustomStringConvertible {
+public struct RangedTrait: SpecificTrait, Hashable, Codable, CustomStringConvertible {
     public struct SpecificContent: Hashable, Codable {
         public let ammo: UInt
     }
@@ -25,7 +25,7 @@ public struct TraitRanged: SpecificTrait, Hashable, Codable, CustomStringConvert
     }
 }
 
-public extension TraitRanged {
+public extension RangedTrait {
     init(from decoder: Decoder) throws {
         fatalError()
     }

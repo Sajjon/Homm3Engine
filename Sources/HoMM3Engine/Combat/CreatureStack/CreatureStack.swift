@@ -15,43 +15,63 @@ public extension AttackType {
         self == .ranged
     }
     var isMelee: Bool {
-         self == .melee
-     }
-}
-
-public struct CreatureStack: Hashable, Codable, CustomStringConvertible {
-    
-    public private(set) var creatureType: Creature
-    private let startingQuantity: Quantity
-    private var currentQuantity: Quantity
-    private var perishedQuanity: Quantity = 0
-    public let controllingHero: Hero
-    public private(set) var inflictedDamage: Damage?
-    
-    public private(set) var modifiers = [Modifier]()
-    
-    public init(of creatureType: Creature, quantity: Quantity, controlledBy hero: Hero) {
-        self.creatureType = creatureType
-        self.startingQuantity = quantity
-        self.currentQuantity = quantity
-        self.controllingHero = hero
+        self == .melee
     }
 }
 
-public extension CreatureStack {
+public extension Combat {
+    final class CreatureStack: Equatable, Codable, CustomStringConvertible {
+        
+        public private(set) var creatureType: Creature
+        public let startingQuantity: Quantity
+        
+        private var currentQuantity: Quantity
+        public private(set) var perishedQuanity: Quantity = 0
+         
+        private let startingPositionOnBattlefield: Battlefield.HexTile
+        public let positionOnBattleField: Battlefield.HexTile
+        
+        private unowned let fightingInArmy: FightingArmy
+        
+        public private(set) var inflictedDamage: Damage?
+        
+        public private(set) var modifiers = [Modifier]()
+        
+        public init(
+            _ quantity: Quantity,
+            type creatureType: Creature,
+//            combat: Combat,
+            fightingInArmy: FightingArmy,
+            tile: Battlefield.HexTile
+        ) {
+            self.creatureType = creatureType
+            self.fightingInArmy = fightingInArmy
+//            self.combat = combat
+            self.startingPositionOnBattlefield = tile
+            self.positionOnBattleField = tile
+            self.startingQuantity = quantity
+            self.currentQuantity = quantity
+        }
+        
+        public init(from decoder: Decoder) throws {
+            fatalError()
+        }
+        public var controllingHero: Hero? { fightingInArmy.hero }
+    }
+    
+}
+
+public extension Combat.CreatureStack {
+    
+    var quantity: Quantity { currentQuantity }
+    
     var description: String {
         "\(currentQuantity) \(creatureType)"
     }
 }
 
-internal extension Creature {
-    func stack(of quantity: CreatureStack.Quantity, controlledBy hero: Hero) -> CreatureStack {
-        .init(of: self, quantity: quantity, controlledBy: hero)
-    }
-}
-
 // MARK: Private
-private extension CreatureStack {
+private extension Combat.CreatureStack {
     
     typealias HPModifier = Creature.Stats.HealthPoints.Magnitude
     
@@ -71,7 +91,7 @@ private extension CreatureStack {
     
     /// Attack modifier, primarily the Hero's attack strength + spells
     var attackModifier: Attack {
-        var attackModifier: Attack = controllingHero.primarySkills.attack
+        var attackModifier: Attack = controllingHero?.primarySkills.attack ?? 0
         if hasActiveSpell(.bloodlust) {
             attackModifier += 3 // or 6 if Hero has advanced / expert Fire Magic
             // This is NOT a sustainable solution
@@ -79,7 +99,7 @@ private extension CreatureStack {
         if isAffected(by: AnyTrait.disease) {
             attackModifier -= 2
         }
-
+        
         // TODO: take into consideration: "native terrain or hero's creature specialties."
         return attackModifier
     }
@@ -91,12 +111,12 @@ private extension CreatureStack {
     
     /// Defense modifier, primarily the Hero's defense strength + spells
     var defenseModifier: Defense {
-        var defenseModifier: Defense = controllingHero.primarySkills.defense
+        var defenseModifier: Defense = controllingHero?.primarySkills.defense ?? 0
         if isAffected(by: AnyTrait.disease) {
             // This is NOT a sustainable solution
             defenseModifier -= 2
         }
-
+        
         // TODO: take into consideration: "native terrain or hero's creature specialties."
         return defenseModifier
     }
@@ -109,10 +129,10 @@ private extension CreatureStack {
     // https://heroes.thelazy.net/index.php/Damage#The_damage_calculation_formula
     // VCMI: https://github.com/vcmi/vcmi/blob/cc75b859d49c6bf43a1f55769b1a6aad5290d851/lib/battle/CBattleInfoCallback.cpp#L711-L963
     static func calculateDamageInterval(
-        causedBy attackingStack: Self,
-        attacking targetStack: Self,
+        causedBy attackingStack: SelfC,
+        attacking targetStack: SelfC,
         attackType: AttackType,
-        randomness: RandomNumberGenerator = SeededGenerator()
+        randomness: RandomNumberGenerator = RandomnessSource()
     ) -> (min: Damage, max: Damage) {
         
         let attackingHero = attackingStack.controllingHero
@@ -156,6 +176,7 @@ private extension CreatureStack {
         }()
         
         let I2: Double = {
+            guard let attackingHero = attackingHero else { return 0 }
             if isRangedAttack {
                 guard let archeryLevel = attackingHero.level(of: .archery) else {
                     return 0
@@ -184,13 +205,14 @@ private extension CreatureStack {
         }()
         
         let I3: Double = {
+            guard let attackingHero = attackingHero else { return 0 }
             
             // Orrin and Gundula has Hero speciality `Archery`
             // Crag Hack Hero specialty "Offense"
             if
                 attackingHero.hasSpecialty(skill: .offense) && isMeleeAttack
                     ||
-                attackingHero.hasSpecialty(skill: .archery) && isRangedAttack
+                    attackingHero.hasSpecialty(skill: .archery) && isRangedAttack
             {
                 return 0.05 * I2 * Double(attackingHero.level)
             } else if attackingHero.hasSpecialty(spell: .bless) && attackingStack.isBlessed {
@@ -215,7 +237,7 @@ private extension CreatureStack {
             // 1/12 (8.33%) and 1/8 (12.5%). Luck may
             // be affected by artifacts, adventure map
             // locations, spells and the Luck secondary skill.
-
+            
             let gotLucky = false
             return gotLucky ? 1 : 0
         }()
@@ -236,9 +258,20 @@ private extension CreatureStack {
 }
 
 // MARK: Public
-public extension CreatureStack {
+public extension Combat.CreatureStack {
+    typealias SelfC = Combat.CreatureStack
     typealias Quantity = UInt
     typealias Damage = Creature.Stats.HealthPoints
+    
+    var isAlive: Bool {
+        currentQuantity > 0
+    }
+    
+    var initiative: Creature.Stats.Speed {
+        let initiative = creatureType.stats.speed
+        // TODO add modifiers, spell, hero artifacts etc
+        return initiative
+    }
     
     var isWounded: Bool {
         inflictedDamage != nil
@@ -249,7 +282,7 @@ public extension CreatureStack {
     }
     
     @discardableResult
-    mutating func resurrectOrAnimateDead(_ quantity: Quantity) -> Self {
+    func resurrectOrAnimateDead(_ quantity: Quantity) -> SelfC {
         precondition(quantity <= perishedQuanity)
         perishedQuanity -= quantity
         currentQuantity += quantity
@@ -257,7 +290,7 @@ public extension CreatureStack {
     }
     
     @discardableResult
-    mutating func inflictDamage(_ damage: Damage) -> Self {
+    func inflictDamage(_ damage: Damage) -> SelfC {
         if damage >= healthPointsOfCurrentDefender {
             let damageToInflictOnNextGuy = Int(damage) - Int(healthPointsOfCurrentDefender)
             assert(damageToInflictOnNextGuy >= 0)
@@ -278,19 +311,19 @@ public extension CreatureStack {
     }
     
     @discardableResult
-    mutating func kill(_ quantityPossiblyGreaterThanStackCount: Quantity) -> Self {
+    func kill(_ quantityPossiblyGreaterThanStackCount: Quantity) -> SelfC {
         let quantity = min(quantityPossiblyGreaterThanStackCount, currentQuantity)
         currentQuantity -= quantity
         perishedQuanity += quantity
         return self
     }
     
-    mutating func attack(_ targetStack: inout Self) {
+    func attack(_ targetStack: SelfC) {
         fatalError()
     }
     
     func damageInterval(
-        whenAttackin targetStack: Self,
+        whenAttackin targetStack: SelfC,
         type attackType: AttackType
     ) -> (min: Damage, max: Damage) {
         
@@ -304,7 +337,7 @@ public extension CreatureStack {
 }
 
 // MARK: HasSpell
-public extension CreatureStack {
+public extension Combat.CreatureStack {
     
     var activeSpells: [Spell] {
         modifiers.compactMap({ $0 as? Spell })
@@ -315,8 +348,8 @@ public extension CreatureStack {
     }
     
     var isBlessed: Bool {
-          hasActiveSpell(.bless)
-      }
+        hasActiveSpell(.bless)
+    }
     
     func hasActiveSpell(_ spell: Spell) -> Bool {
         activeSpells.contains(spell)
@@ -328,31 +361,15 @@ public extension CreatureStack {
 }
 
 // MARK: Codable
-public extension CreatureStack {
+public extension Combat.CreatureStack {
     func encode(to encoder: Encoder) throws {
-         fatalError()
-     }
-     
-     init(from decoder: Decoder) throws {
-         fatalError()
-     }
-}
-
-// MARK: Equatable
-public extension CreatureStack {
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        // TODO include all relevant fields
-        lhs.creatureType == rhs.creatureType
-            &&
-        lhs.currentQuantity == rhs.currentQuantity
-
+        fatalError()
     }
 }
 
-// MARK: Hashable
-public extension CreatureStack {
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(creatureType)
-        hasher.combine(currentQuantity)
+// MARK: Equatable
+public extension Combat.CreatureStack {
+    static func == (lhs: Combat.CreatureStack, rhs: Combat.CreatureStack) -> Bool {
+       lhs === rhs
     }
 }

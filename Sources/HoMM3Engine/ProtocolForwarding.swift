@@ -249,7 +249,7 @@ public protocol StrideableTag: ComparableTag {
     static func distance(from start: RawValue, to end: RawValue) -> Stride
 }
 
-extension StrideableTag where RawValue: Strideable, RawValue.Stride == Stride {
+extension StrideableTag where Self: SignedIntegerTag, RawValue: Strideable, RawValue.Stride == Stride {
     public static func advance(_ rawValue: RawValue, by n: Stride) -> RawValue {
         return rawValue.advanced(by: n)
     }
@@ -258,6 +258,21 @@ extension StrideableTag where RawValue: Strideable, RawValue.Stride == Stride {
         return distance(from: start, to: end)
     }
 }
+
+extension StrideableTag where Self: UnsignedIntegerTag, RawValue: Strideable, RawValue.Stride == Stride, Stride: BinaryInteger {
+    public static func advance(_ rawValue: RawValue, by n: Stride) -> RawValue {
+        return rawValue.advanced(by: n)
+    }
+    
+    public static func distance(from start: RawValue, to end: RawValue) -> Stride {
+        guard let stride = Stride(exactly: start.distance(to: end)) else {
+            fatalError("bad stride")
+        }
+        return stride
+    }
+}
+
+
 
 extension NewType: Strideable where Tag: StrideableTag {
     public typealias Stride = Tag.Stride
@@ -669,7 +684,7 @@ protocol UnsignedFixedWidthIntTags: UnsignedTags, FixedWidthIntegerTag { }
 open class UIntTagBase: TagBase<UInt>, UnsignedFixedWidthIntTags {
     public typealias Magnitude = RawValue.Magnitude
     public typealias IntegerLiteralType = RawValue.IntegerLiteralType
-    public typealias Stride = RawValue.Stride
+    public typealias Stride = RawValue.Stride // RawValue.Stride.Stride
     public typealias Words = RawValue.Words
 }
 
