@@ -131,6 +131,14 @@ public extension Combat {
     ) rethrows -> Combat.Result? {
         return nil
     }
+    
+    func nextCreatureStackToAct() -> CreatureStack? {
+        if let nextToAct = currentRound.nextCreatureStackToAct() {
+            return nextToAct
+        }
+        let nextRound = prepareNextRound()
+        return nextRound.nextCreatureStackToAct()
+    }
 }
 
 public extension Array {
@@ -193,15 +201,7 @@ private extension Combat {
     func getLoser() -> FightingArmy {
         implementMe()
     }
-    
-    func nextCreatureStackToAct() -> CreatureStack? {
-        if let nextToAct = currentRound.nextCreatureStackToAct() {
-            return nextToAct
-        }
-        let nextRound = prepareNextRound()
-        return nextRound.nextCreatureStackToAct()
-    }
-    
+        
     func xpGainedByWinner() -> Hero.ExperiencePoints {
         implementMe()
     }
