@@ -25,7 +25,7 @@ public extension Battlefield.HexTile {
 // MARK: Value
 public extension Battlefield.HexTile {
     typealias Value = NewType<HexTileTag>
-    final class HexTileTag: UIntTagBase {}
+    final class HexTileTag: IntTagBase {}
 }
 
 extension Battlefield.HexTile.Value: ExpressibleByUnicodeScalarLiteral {

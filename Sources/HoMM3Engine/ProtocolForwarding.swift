@@ -255,7 +255,7 @@ extension StrideableTag where Self: SignedIntegerTag, RawValue: Strideable, RawV
     }
     
     public static func distance(from start: RawValue, to end: RawValue) -> Stride {
-        return distance(from: start, to: end)
+        return start.distance(to: end)
     }
 }
 
