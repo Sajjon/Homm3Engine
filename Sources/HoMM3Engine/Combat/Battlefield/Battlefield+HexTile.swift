@@ -28,6 +28,13 @@ public extension Battlefield.HexTile {
     final class HexTileTag: IntTagBase {}
 }
 
+// MARK: Public
+public extension Battlefield.HexTile {
+    var name: String {
+        return "r\(String(row.rawValue, radix: 16))c\(String(column.rawValue, radix: 16))"
+    }
+}
+
 extension Battlefield.HexTile.Value: ExpressibleByUnicodeScalarLiteral {
     public typealias UnicodeScalarLiteralType = StringLiteralType
 }

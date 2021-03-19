@@ -210,6 +210,24 @@ public final class BattlefieldTests: XCTestCase {
     
     
     
+    func test_distance_from_r1c0_to_r0c4_is_five() {
+        let battlefield = Battlefield()
+        XCTAssertEqual(
+            battlefield.distance(
+                between: .r1c0,
+                and: .r0c4
+            ),
+            5
+        )
+    }
+    
+    func test_all_equal_five() {
+        assertThatDistances(
+            from: .r1c0,
+            to: [.r0c4, .r1c5, .r2c4, .r3c4, .r4c3, .r5c3, .r6c2, .r6c1, .r6c0],
+            allEqual: 5
+        )
+    }
     
     
     
@@ -298,7 +316,7 @@ private extension BattlefieldTests {
             XCTAssertEqual(
                 calculatedDistance,
                 expectedDistance,
-                "Expected distance between: \(sourceTile) and \(destinationTile) is \(expectedDistance), but got: \(calculatedDistance) (destinationTileIndex: \(destinationTileIndex)",
+                "Expected distance between: \(sourceTile.name) and \(destinationTile.name) is \(expectedDistance), but got: \(calculatedDistance) (destinationTileIndex: \(destinationTileIndex)",
                 line: line
             )
         }

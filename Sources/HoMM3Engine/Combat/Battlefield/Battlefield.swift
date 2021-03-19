@@ -47,24 +47,41 @@ public extension Battlefield {
     
     /// Calculates the euclidean distance between `source` and `destination` tiles on the battlefield.
     func distance(
-        between source: HexTile,
-        and destination: HexTile
+        between hex1: HexTile,
+        and hex2: HexTile
     ) -> HexTile.Value {
-        guard source != destination else { return 0 }
+        if hex1 == hex2 { return 0 }
         
-        let rowDelta = HexTile.Value(abs(destination.row - source.row))
-
-        if source.column == destination.column {
-            return rowDelta
-        } else if source.row == destination.row {
-            return HexTile.Value(abs(destination.column - source.column))
+        let y1 = hex1.y
+        let y2 = hex2.y
+        let x1 = HexTile.Value(Double(hex1.x + y1) / 2)
+        let x2 = HexTile.Value(Double(hex2.x + y2) / 2)
+        
+        let xDst = x2 - x1
+        let yDst = y2 - y1
+        
+        let tmpDist: HexTile.Value
+        
+        if (xDst >= 0 && yDst >= 0) || (xDst < 0 && yDst < 0) {
+            tmpDist = max(
+                abs(xDst),
+                abs(yDst)
+            )
         } else {
-            let rowOffset: HexTile.Value = source.row.sameParity(as: destination.row) ? 0 : 1
-            let remainingColumnDeltaAfterDiagonal = HexTile.Value(floor(Double(rowDelta/2)))
-            let columnsLeft = HexTile.Value(abs(destination.column - source.column - remainingColumnDeltaAfterDiagonal))
-            let distance = rowDelta + columnsLeft
-            return distance - rowOffset
+            tmpDist = abs(xDst) + abs(yDst)
         }
+        
+        return max(1, tmpDist)
+    }
+}
+
+private extension Battlefield.HexTile {
+    var y: Value {
+        row
+    }
+    
+    var x: Value {
+        column
     }
 }
 
